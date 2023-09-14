@@ -1,0 +1,90 @@
+#fullContainer {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#leftContainer {
+    width: 50%;
+}
+
+#rightContainer {
+    width: 50%;
+    text-align:center;
+}
+
+#slideshow {
+    flex: 1; /* Expand to fill available space */
+    display: flex;
+    justify-content: center; /* Horizontally center the content */
+    align-items: center; /* Vertically center the content */
+}
+
+#sideinfo {
+    /* display: inline-block; */
+    /* border: 0em solid transparent; */
+    flex: 1;
+    box-sizing: border-box;
+    width: 45em;
+    height: 40em;
+    /* float: right; */
+    
+}
+
+#TitleDisplay {
+    vertical-align: middle;
+    /* text-align:center; */
+    
+}
+
+#Clock {
+    font-size: 100px;
+    border: 25px solid transparent;
+}
+
+
+#DateDisplay{
+    /* text-align: center; */
+    /* border: 25px solid transparent; */
+}
+
+#CountdownDisplay {
+    /* text-align: center; */
+    border: 25px solid transparent;
+}
+
+#Logo {
+    /* text-align: center; */
+}
+
+#Announcements {
+    width:100%; 
+}
+
+#PrayerCardsList {
+    /* position: fixed; 
+    bottom:10%;
+    width:50%; */
+    display: flex;
+    justify-content: space-between;
+    padding: 20px;
+    /* border: 2px solid #000;
+    border-radius: 5px;
+    background-color: #f0f0f0; */
+}
+
+#PrayerCard {
+    font-size: 30px;
+    text-align: center;
+    width: 150px;
+}
+
+
+/* ImageSlider.css */
+.slider-image {
+    transition: opacity 1s ease-in-out, transform 1s ease-in-out;
+}
+
+.fade {
+    opacity: 0;
+    transform: translateX(-20px); /* Adjust this value to control the direction of the fade */
+}
