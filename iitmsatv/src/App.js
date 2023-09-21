@@ -1,10 +1,13 @@
 import Main from "./Components/Main";
+import './Components/Style.css'
 
 function App() {
   return (
-    <div>    
-      <Main></Main>
-    </div>
+    <body>
+      <div>    
+        <Main></Main>
+      </div>
+    </body>
 
     // <Home></Home>
     // <Router>

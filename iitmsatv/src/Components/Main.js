@@ -16,45 +16,44 @@ class Main extends Component {
         this.Today_Prayer_Times = {};
         this.Iqamah_Times = {};
         this.setTimes = true;
-        this.logosize = '30%';
+        this.logosize = '200px';
         this.state = {
             Gregorian_Date: "",
             Hijri_Date: "",
             Fajr: {
                 start: "",
                 iqamah: "",
-                selected: false
+                next: false
             },
             Sunrise: {
                 start: "",
-                selected: false
+                next: false
             },
             Dhuhr: {
                 start: "",
                 iqamah: "",
-                selected: false
+                next: false
             },
             Asr:  {
                 start: "",
                 iqamah: "",
-                selected: false
+                next: false
             },
             Maghrib: {
                 start: "",
                 iqamah: "",
-                selected: false
+                next: false
             },
             Isha: {
                 start: "",
                 iqamah: "",
-                selected: false
+                next: false
             },
             Jummah: {
                 start: "",
-                selected: false
             },
             next_salah_time: null,
-            next_salah:""
+            next_salah:"",
         }
     }
 
@@ -87,52 +86,48 @@ class Main extends Component {
                     fetch("http://localhost:7000/todayHijri").then(res => res.text()),
                     fetch("http://localhost:7000/NextSalah").then(res => res.json()),
                     fetch("http://localhost:7000/todayGreg").then(res => res.text())])
-        .then(([iqamah_times, today_times, hijri_date, nextSalah, greg_date]) => {
-            // console.log('nextSalah: ', nextSalah);
+        .then(([iqamah_times, today_times, hijri_date, nextSalah ,greg_date]) => {
             this.Today_Prayer_Times = today_times;
             this.Iqamah_Times = iqamah_times;
             this.start = true;
-            // console.log("this.state.next_salah_time", this.state.next_salah_time)
-            // console.log('nextSalah.time: ', nextSalah.time);
+
             this.setState(({
                 Gregorian_Date: greg_date,
                 Hijri_Date: hijri_date,
                 Fajr: {
                     start: today_times.Fajr,
                     iqamah: iqamah_times.Fajr,
-                    selected: nextSalah.prayer === "Fajr"
-
+                    next: nextSalah.prayer === "Fajr"
                 },
                 Sunrise: {  //Yeah I just labeled Sunrise as a prayer just so the countdown and Sunrise time component would work simply. It does not have an Iqamah property tho
                     start: today_times.Sunrise,
-                    selected: nextSalah.prayer === "Sunrise"
+                    next: nextSalah.prayer === "Sunrise"
                 },
                 Dhuhr: {
                     start: today_times.Dhuhr,
                     iqamah: iqamah_times.Dhuhr,
-                    selected: nextSalah.prayer === "Dhuhr"
+                    next: nextSalah.prayer === "Dhuhr"
                 },
                 Asr: {
                     start: today_times.Asr,
                     iqamah: iqamah_times.Asr,
-                    selected: nextSalah.prayer === "Asr"
+                    next: nextSalah.prayer === "Asr"
                 },
                 Maghrib: {
                     start: today_times.Maghrib,
                     iqamah: iqamah_times.Maghrib,
-                    selected: nextSalah.prayer === "Maghrib"
+                    next: nextSalah.prayer === "Maghrib"
                 },
                 Isha: {
                     start: today_times.Isha,
                     iqamah: iqamah_times.Isha,
-                    selected: nextSalah.prayer === "Isha"
+                    next: nextSalah.prayer === "Isha"
                 },
                 Jummah: {
                     start: iqamah_times.Jummah,
-                    selected: nextSalah.prayer === "Jummah"
                 },
                 next_salah_time: nextSalah.time,
-                next_salah: nextSalah.salah
+                next_salah: nextSalah.salah,
             }))
             console.log("MAIN: State is set");
             this.setTimes = false;
@@ -166,76 +161,85 @@ class Main extends Component {
         else{
             newTime = newTime + ' AM';
         }
-        // console.log("new time: " + newTime);
         return newTime;
     }
 
     render() {
-        // console.log('rendered');
+        console.log('rendered');
         return (
-            <div id='fullContainer'>
-                <div id="leftContainer">
-                    <div id='slideshow'>
-                        <Slideshow></Slideshow>
+            <body>
+                <div id='fullContainer'>
+                    <div id="leftContainer">
+                        <div id='slideshow'>
+                            <Slideshow></Slideshow>
+                        </div>
+                        <div id='PrayerCardsList'>
+                            <ListGroup horizontal>
+                                <ListGroup.Item active={this.state.next_salah === "Sunrise"}>
+                                    <PrayerTime type='Fajr' start={this.state.Fajr.start} iqamah={this.state.Fajr.iqamah} selected={this.state.Fajr.selected}></PrayerTime>
+                                </ListGroup.Item>
+
+                                <ListGroup.Item active={this.state.next_salah === "Dhuhr"}>
+                                    <PrayerTime type='Sunrise' start={this.state.Sunrise.start} iqamah={""} selected={this.state.Sunrise.selected}></PrayerTime>
+                                </ListGroup.Item>
+
+                                <ListGroup.Item active={this.state.next_salah === "Asr"}>
+                                    <PrayerTime type='Dhuhr' start={this.state.Dhuhr.start} iqamah={this.state.Dhuhr.iqamah} selected={this.state.Dhuhr.selected}></PrayerTime>
+                                </ListGroup.Item>
+
+                                <ListGroup.Item active={this.state.next_salah === "Maghrib"}>
+                                    <PrayerTime type='Asr' start={this.state.Asr.start} iqamah={this.state.Asr.iqamah} selected={this.state.Asr.selected}></PrayerTime>
+                                </ListGroup.Item>
+
+                                <ListGroup.Item active={this.state.next_salah === "Isha"}>
+                                    <PrayerTime type='Maghrib' start={this.state.Maghrib.start} iqamah={this.state.Maghrib.iqamah} selected={this.state.Maghrib.selected}></PrayerTime>
+                                </ListGroup.Item>
+
+                                <ListGroup.Item active={this.state.next_salah === "Fajr"}>
+                                    <PrayerTime type='Isha' start={this.state.Isha.start} iqamah={this.state.Isha.iqamah} selected={this.state.Isha.selected}></PrayerTime>
+                                </ListGroup.Item>
+
+                                {/* <ListGroup.Item>
+                                    <PrayerTime type='Jummah' start={this.state.Jummah.start} iqamah="" selected={this.state.Jummah.selected}></PrayerTime>
+                                </ListGroup.Item> */}
+                            </ListGroup>
+                        </div>
                     </div>
-                    <div id='PrayerCardsList'>
-                        <ListGroup horizontal>
-                            <ListGroup.Item variant="secondary">
-                                <PrayerTime type='Fajr' start={this.state.Fajr.start} iqamah={this.state.Fajr.iqamah} selected={this.state.Fajr.selected}></PrayerTime>
-                            </ListGroup.Item>
-
-                            <ListGroup.Item variant="secondary">
-                                <PrayerTime type='Sunrise' start={this.state.Sunrise.start} iqamah={""} selected={this.state.Sunrise.selected}></PrayerTime>
-                            </ListGroup.Item>
-
-                            <ListGroup.Item variant="secondary">
-                                <PrayerTime type='Dhuhr' start={this.state.Dhuhr.start} iqamah={this.state.Dhuhr.iqamah} selected={this.state.Dhuhr.selected}></PrayerTime>
-                            </ListGroup.Item>
-
-                            <ListGroup.Item variant="secondary">
-                                <PrayerTime type='Asr' start={this.state.Asr.start} iqamah={this.state.Asr.iqamah} selected={this.state.Asr.selected}></PrayerTime>
-                            </ListGroup.Item>
-
-                            <ListGroup.Item variant="secondary">
-                                <PrayerTime type='Maghrib' start={this.state.Maghrib.start} iqamah={this.state.Maghrib.iqamah} selected={this.state.Maghrib.selected}></PrayerTime>
-                            </ListGroup.Item>
-
-                            <ListGroup.Item variant="secondary">
-                                <PrayerTime type='Isha' start={this.state.Isha.start} iqamah={this.state.Isha.iqamah} selected={this.state.Isha.selected}></PrayerTime>
-                            </ListGroup.Item>
-
-                            {/* <ListGroup.Item>
-                                <PrayerTime type='Jummah' start={this.state.Jummah.start} iqamah="" selected={this.state.Jummah.selected}></PrayerTime>
-                            </ListGroup.Item> */}
-                        </ListGroup>
-                </div>
-                </div>
-                <div id='rightContainer'>
-                    <div id="sideinfo">
-                            <h1 id='TitleDisplay'>Welcome to IIT MSA</h1>
-                            <div    id='Logo'>
-                                <img    src={msa_logo} 
-                                        alt="iit msa logo"
-                                        style={{ width: this.logosize, height: this.logosize, objectFit: 'cover' }}
-                                ></img>
-                            </div>
-                            <div id='Clock'>
-                                <Clock></Clock>
-                            </div>
-                            <h3 id='DateDisplay'>{this.state.Hijri_Date}</h3>
-                            <h3 id='DateDisplay'>{this.state.Gregorian_Date}</h3>
-                            <h2 id='CountdownDisplay'>
-                                <Countdown salah={this.state.next_salah} finish_time={this.state.next_salah_time} callback={this.nextPrayerCountdown}></Countdown>
-                            </h2>
-                            <h2 id='DateDisplay'>
-                                Jummah <br></br> {this.formatTime(this.state.Jummah.start)}
-                            </h2>
+                    <div id='rightContainer'>
+                        <div id="sideinfo">
+                                <h1 id='TitleDisplay'>Welcome to IIT MSA</h1>
+                                <div    id='Logo'>
+                                    <img    src={msa_logo} 
+                                            alt="iit msa logo"
+                                            style={{ width: this.logosize, height: this.logosize, objectFit: 'cover' }}
+                                    ></img>
+                                </div>
+                                <div id='Clock'>
+                                    <Clock></Clock>
+                                </div>
+                                <hr className="centered-hr"></hr>
+                                <label id='CountdownDisplay'>
+                                    <Countdown salah={this.state.next_salah} finish_time={this.state.next_salah_time} callback={this.nextPrayerCountdown}></Countdown>
+                                </label>
+                                <hr className="centered-hr"></hr>
+                                <div id='DatesContainer'>
+                                    <div>
+                                        <label id='DateDisplay'>{this.state.Hijri_Date}</label>
+                                    </div>
+                                    <div>
+                                        <label id='DateDisplay'>{this.state.Gregorian_Date}</label>
+                                    </div>
+                                </div>
+                                <h2 id='JummahDisplay'>
+                                    Jummah <br></br> {this.formatTime(this.state.Jummah.start)}
+                                </h2>
+                        </div>
+                    </div>
+                    <div id="Announcements">
+                        <Announcements></Announcements>
                     </div>
                 </div>
-                <div id="Announcements">
-                    <Announcements></Announcements>
-                </div>
-            </div>
+            </body>
         )
     }
 }

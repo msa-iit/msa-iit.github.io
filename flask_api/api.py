@@ -8,6 +8,10 @@ import os
 app = Flask(__name__)
 CORS(app)
 
+# Global Variables
+# Store results of previous endpoints to avoid unnecessary computation
+app.config['Iqamahs'] = {}
+
 @app.route('/Announcements')
 def Announcements():
     with open('./flask_api/data/announcements.txt', 'r') as file:
@@ -19,6 +23,7 @@ def Announcements():
 def Iqamahs():
     with open('./flask_api/data/IqamahTimes.json', 'r') as file:
         file_data = json.load(file)
+    app.config['Iqamahs'] = dict(file_data)
     return jsonify(file_data)
 
 @app.route('/prayerAPI')
@@ -69,9 +74,24 @@ def todayHijri():
 
     return (weekday + ", " + month + " " + day + ", " + year)
 
+# @app.route('/CurrentSalah')
+# def CurrentSalah():
+#     salahOrder = ['Fajr, Sunrise, Dhuhr, Asr, Maghrib, Isha']
+#     nextSalah = dict(prayerTimesToday().json)['salah']
+#     idx = salahOrder.index(nextSalah) - 1
+#     if idx < 0:
+#         return salahOrder[-1]
+#     else:
+#         return salahOrder[idx]
+
 @app.route('/NextSalah')
 def NextSalah():
-    Iqamah_Times = dict(Iqamahs().json)
+    if app.config['Iqamahs']:
+        Iqamah_Times = app.config['Iqamahs']
+    else:
+        Iqamah_Times = dict(Iqamahs().json)
+
+    
     Today_Times = dict(prayerTimesToday().json)
     
     currentTime = datetime.now()
@@ -154,6 +174,11 @@ def NextSalah():
 def todayGreg():
     return datetime.now().strftime('%A, %B %d, %Y')
 
+@app.route('/slideshowDelay')
+def slideshowDelay():
+    with open('./flask_api/data/AppSettings.json') as f: 
+        file_content = dict(json.load(f))
+    return str(int(file_content["slideshow_delay"]))
 
 @app.route('/weatherAPI')
 def weatherAPI():

@@ -35,14 +35,14 @@ class Countdown extends React.Component {
     }
 
     componentDidUpdate(prevProps, prevState, snapshot){
-        console.log('componentDidUpdate: this.finish_time: ', this.finish_time);
-        console.log('componentDidUpdate: this.props.finish_time: ', this.props.finish_time);
-        console.log('this.start: ', this.start);
         if(!this.start && this.props.finish_time !== this.finish_time ){            
             console.log("starting countdown")
             var Message = "";
             if(this.props.salah === "End of Day"){
                 Message = "End of Day is in"
+            }
+            else if (this.props.salah === "Sunrise") {
+                Message = "Sunrise is in"
             }
             else{
                 Message = this.props.salah + " Salah is in"
@@ -59,7 +59,6 @@ class Countdown extends React.Component {
     }
 
     componentDidMount(){
-        // console.log('componentDidMount: this.state.finish_time: ', this.state.finish_time);
         var seconds = (this.state.finish_time - (new Date()) / 1000)+1
         var timeLeftVar = this.get_UI_time(seconds);
         this.setState({ 
@@ -79,20 +78,15 @@ class Countdown extends React.Component {
             clearInterval(this.timer);
             setTimeout(null,2000);
             this.start = false
-            console.log('start changed to false');
             this.callback();
-            console.log('callback: ');
+            console.log('callback to get countdown for next prayer: ');
         }
     }
 
     render() {
-        // console.log('Countdown: rendered');
-        // console.log('this.state.UI_time.h: ', this.state.UI_time.h);
-        // console.log('this.state.UI_time.m: ', this.state.UI_time.m);
-        // console.log('this.state.UI_time.s: ', this.state.UI_time.s);
         return(
             <div>
-                {this.state.message} <br></br> {('0' + this.state.UI_time.h).slice(-2)}h {('0' + this.state.UI_time.m).slice(-2)}m {('0' + this.state.UI_time.s).slice(-2)}s
+                {this.state.message} <br></br> {('0' + this.state.UI_time.h).slice(-2)} : {('0' + this.state.UI_time.m).slice(-2)} : {('0' + this.state.UI_time.s).slice(-2)}
             </div>
         );
     }

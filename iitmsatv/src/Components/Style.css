@@ -1,10 +1,13 @@
 #fullContainer {
     display: flex;
     flex-wrap: wrap;
+    background-color: rgb(25,25,25);
+    color: white;
 }
 
 #leftContainer {
     width: 50%;
+    padding-left: 300px;
 }
 
 #rightContainer {
@@ -20,64 +23,84 @@
 }
 
 #sideinfo {
-    /* display: inline-block; */
-    /* border: 0em solid transparent; */
     flex: 1;
     box-sizing: border-box;
-    width: 45em;
-    height: 40em;
-    /* float: right; */
-    
+    width: 1200px;
 }
 
 #TitleDisplay {
-    vertical-align: middle;
-    /* text-align:center; */
-    
+    vertical-align: middle;    
 }
 
 #Clock {
     font-size: 100px;
-    border: 25px solid transparent;
 }
 
+#DatesContainer {
+    border: 15px solid transparent;
+}
 
 #DateDisplay{
-    /* text-align: center; */
-    /* border: 25px solid transparent; */
+    flex: 1;
+    font-size: 35px;
 }
 
 #CountdownDisplay {
-    /* text-align: center; */
+    font-size: 70px;
+}
+
+#JummahDisplay {
+    font-size: 40px;
     border: 25px solid transparent;
 }
 
 #Logo {
-    /* text-align: center; */
+    
 }
 
 #Announcements {
     width:100%; 
+    border: 10px solid transparent;
+    font-size: 25px;
 }
 
 #PrayerCardsList {
-    /* position: fixed; 
-    bottom:10%;
-    width:50%; */
+    flex: 1;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     padding: 20px;
-    /* border: 2px solid #000;
-    border-radius: 5px;
-    background-color: #f0f0f0; */
+    padding-left: 20px;
 }
 
 #PrayerCard {
     font-size: 30px;
     text-align: center;
-    width: 150px;
+    width: 170px;
+    color: white;
 }
 
+.centered-hr {
+    margin: 0 auto;
+    width: 50%; /* You can adjust the width as needed */
+    border: 5px solid white;
+}
+
+.list-group-item{
+    background-color: rgb(40,40,40) !important;
+    border-color: rgb(60, 60, 60)  !important;
+}
+/* 
+.list-group-item[aria-expanded="true"]{
+    background-color: rgb(40,0,0) !important;
+} */
+
+.list-group-item.active{
+    background-color: rgb(40,0,0) !important;
+}
+
+body {
+    background-color: black;
+}
 
 /* ImageSlider.css */
 .slider-image {
@@ -86,5 +109,5 @@
 
 .fade {
     opacity: 0;
-    transform: translateX(-20px); /* Adjust this value to control the direction of the fade */
+    transform: translateX(-150px); /* Adjust this value to control the direction of the fade */
 }
