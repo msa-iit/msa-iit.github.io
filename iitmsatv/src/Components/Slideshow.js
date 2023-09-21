@@ -10,7 +10,7 @@ class Slideshow extends Component {
             currentImageIndex: 0,
             imageList: [],
             fading: false,
-            scalingPercentage: 80, // Initial scaling percentage (adjust as needed)
+            // scalingPercentage: 80, // Initial scaling percentage (adjust as needed)
         };
         this.slideshow_delay = 10;
     }
@@ -66,32 +66,32 @@ class Slideshow extends Component {
         }, 500);
     };
 
-    // Function to handle scaling percentage change
-    handleScalingChange = (event) => {
-        const scalingPercentage = parseInt(event.target.value);
-        this.setState({ scalingPercentage });
-    };
+    // // Function to handle scaling percentage change
+    // handleScalingChange = (event) => {
+    //     const scalingPercentage = parseInt(event.target.value);
+    //     this.setState({ scalingPercentage });
+    // };
 
-    // Function to handle image load
-    handleImageLoad = (event) => {
-        const image = event.target;
-        const scalingPercentage = this.calculateScalingPercentage(image);
-        this.setState({ scalingPercentage });
-    };
+    // // Function to handle image load
+    // handleImageLoad = (event) => {
+    //     const image = event.target;
+    //     const scalingPercentage = this.calculateScalingPercentage(image);
+    //     this.setState({ scalingPercentage });
+    // };
 
-    // Function to calculate the scaling percentage based on image height
-    calculateScalingPercentage = (image) => {
-        const maxHeight = 720;
-        const originalHeight = image.clientHeight;
-        if (originalHeight <= maxHeight) {
-            return 100; // No scaling required
-        } else {
-            return (maxHeight / originalHeight) * 100;
-        }
-    };
+    // // Function to calculate the scaling percentage based on image height
+    // calculateScalingPercentage = (image) => {
+    //     const maxHeight = 720;
+    //     const originalHeight = image.clientHeight;
+    //     if (originalHeight <= maxHeight) {
+    //         return 100; // No scaling required
+    //     } else {
+    //         return (maxHeight / originalHeight) * 100;
+    //     }
+    // };
 
     render() {
-        const { currentImageIndex, imageList, fading, scalingPercentage } = this.state;
+        const { currentImageIndex, imageList, fading } = this.state;
         const currentImage = imageList[currentImageIndex];
 
         // Apply the fading animation class conditionally

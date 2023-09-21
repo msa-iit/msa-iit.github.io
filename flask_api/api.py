@@ -4,6 +4,9 @@ from datetime import datetime, timedelta
 import requests
 from flask_cors import CORS
 import os
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
+from oauth2client.client import GoogleCredentials
 
 app = Flask(__name__)
 CORS(app)
@@ -183,6 +186,10 @@ def slideshowDelay():
 @app.route('/weatherAPI')
 def weatherAPI():
     API_Key = 'a6f7364a3cec410c8bf00401232706'
+
+# @app.before_first_request
+# def before_first_request_func():
+#     pass
 
 if __name__ == '__main__':
     app.run(port=7000)
