@@ -7,24 +7,142 @@ import os
 from pydrive.auth import GoogleAuth
 from pydrive.drive import GoogleDrive
 from oauth2client.client import GoogleCredentials
+from googleapiclient.discovery import build
+from google.oauth2 import service_account
+import sys
+import time
+
+def Start_Drive():
+    filename = app.config['drive_creds_filename']
+    gauth = GoogleAuth()
+    # Try to load saved client credentials
+    gauth.LoadCredentialsFile(filename)
+    if gauth.credentials is None:
+        # Authenticate if they're not there
+        gauth.LocalWebserverAuth()
+    elif gauth.access_token_expired:
+        # Refresh them if expired
+        gauth.Refresh()
+    else:
+        # Initialize the saved creds
+        gauth.Authorize()
+    # Save the current credentials to a file
+    gauth.SaveCredentialsFile(filename)
+
+    app.config['google_drive'] = GoogleDrive(gauth)
+
+def Refresh_Drive():
+    gauth:GoogleAuth = app.config['google_drive']
+    if gauth.access_token_expired:
+        filename = app.config['drive_creds_filename']
+        gauth.Refresh()
+        gauth.SaveCredentialsFile(filename)
+        app.config['google_drive'] = gauth
+
+def Start_Docs():
+    docs_creds_filename = app.config['docs_creds_filename']
+    credentials = service_account.Credentials.from_service_account_file(docs_creds_filename, scopes=['https://www.googleapis.com/auth/documents'])
+    service = build('docs', 'v1', credentials=credentials)
+    app.config['google_docs'] = service
+
+def Get_Folder_ID() -> str:
+    drive = app.config['google_drive']
+    folder_name = app.config['folder_name']
+    folder_list = drive.ListFile({'q': f"title='{folder_name}' and mimeType='application/vnd.google-apps.folder'"}).GetList()
+    # If the folder is found, use its ID
+    if len(folder_list) > 0:
+        return folder_list[0]['id']
+    else:
+        return None
+
+def Get_FileID(filename) -> str:
+    drive = app.config['google_drive']
+    folder_list = drive.ListFile({'q': f"title='{filename}' and mimeType='application/vnd.google-apps.folder'"}).GetList()
+    # If the folder is found, use its ID
+    if len(folder_list) > 0:
+        return folder_list[0]['id']
+    else:
+        return None
+
+def Get_File_Content(file_id) -> str:
+    service = app.config['google_docs']
+    if(service == None):
+        return "Docs not initialized"
+    
+    document = service.documents().get(documentId=file_id).execute()
+    document_content = document.get('body', {}).get('content', '')
+
+    # Extract and print the text content
+    doc_text = ''
+    for elem in document_content:
+        if 'paragraph' in elem:
+            doc_text += elem['paragraph']['elements'][0]['textRun']['content']
+
+    return doc_text
+
+def init_app() -> Flask:
+    app = Flask(__name__)
+    # app.config.from_object('config.Config')
+    
+    with app.app_context():
+        Start_Drive()
+        Start_Docs()
+
+        app.config['Last Refresh'] = datetime.now()
+
+        folder_id = Get_Folder_ID()
+        if folder_id == None:
+            print("'MSA TV' folder not found in drive")
+            sys.exit()
+        app.config['folder_id'] = folder_id
+
+        announcements_fileid = Get_FileID('announcements')
+        if announcements_fileid == None:
+            print("'announcements' folder not found in drive")
+            app.config['announcements_fileid'] = announcements_fileid
+            sys.exit()
+        app.config['announcements_fileid'] = None
+
+        from . import routes
+
+        return app 
+
 
 app = Flask(__name__)
+# app = init_app()
 CORS(app)
 
 # Global Variables
-# Store results of previous endpoints to avoid unnecessary computation
+# Store results of previous endpoints to avoid unnecessary computation.
 app.config['Iqamahs'] = {}
+app.config['google_drive'] = None
+app.config['google_docs'] = None
+app.config['Last Refresh'] = None
+app.config['drive_creds_filename'] = "mycreds.txt"
+app.config['docs_creds_filename'] = "msa_service_account_key.json"
+app.config['folder_name'] = "MSA TV"
+app.config['folder_id'] = None
+app.config['announcements_filename'] = "announcements"
+app.config['announcements_fileid'] = None
+app.config['announcements'] = None
 
 @app.route('/Announcements')
 def Announcements():
-    with open('./flask_api/data/announcements.txt', 'r') as file:
+    with open('./data/announcements.txt', 'r') as file:
         file_data = file.read()
     announcements = file_data.replace('\r','').split('\n')
     return announcements
 
+    # last_refresh:datetime = app.config['Last Refresh']
+    # if last_refresh.hour != datetime.now().hour:
+    #     Refresh_Drive()
+    #     app.config['Last Refresh'] = datetime.now()
+    #     app.config['announcements'] = Get_File_Content(app.config['announcements_fileid'])
+    # return app.config['announcements']
+
 @app.route('/Iqamahs')
 def Iqamahs():
-    with open('./flask_api/data/IqamahTimes.json', 'r') as file:
+    with open('./data/IqamahTimes.json', 'r') as file:
         file_data = json.load(file)
     app.config['Iqamahs'] = dict(file_data)
     return jsonify(file_data)
@@ -32,7 +150,7 @@ def Iqamahs():
 @app.route('/prayerAPI')
 def prayerAPI():
     date = datetime.now()
-    with open('./flask_api/data/AppSettings.json') as f: 
+    with open('./data/AppSettings.json') as f: 
         file_content = json.load(f) 
     month = int(file_content["last_aladhanAPI_call"][:2]) 
     year = int(file_content["last_aladhanAPI_call"][3:7])
@@ -44,11 +162,11 @@ def prayerAPI():
         with open('./data/aladhanAPIsave.json', 'w') as f: 
             json.dump(api_response, f) # Update Settings File to remember that we grabbed new data for this month 
         file_content["last_aladhanAPI_call"] = f"{date.month:02d}/{date.year}" 
-        with open('./flask_api/data/appSettings.json', 'w') as f: 
+        with open('./data/appSettings.json', 'w') as f: 
             json.dump(file_content, f) 
             return jsonify(api_response)
     else: 
-        with open('./flask_api/data/aladhanAPIsave.json', encoding='utf-8') as f:
+        with open('./data/aladhanAPIsave.json', encoding='utf-8') as f:
             api_save = json.load(f)
         return jsonify(api_save)
 
@@ -77,16 +195,6 @@ def todayHijri():
 
     return (weekday + ", " + month + " " + day + ", " + year)
 
-# @app.route('/CurrentSalah')
-# def CurrentSalah():
-#     salahOrder = ['Fajr, Sunrise, Dhuhr, Asr, Maghrib, Isha']
-#     nextSalah = dict(prayerTimesToday().json)['salah']
-#     idx = salahOrder.index(nextSalah) - 1
-#     if idx < 0:
-#         return salahOrder[-1]
-#     else:
-#         return salahOrder[idx]
-
 @app.route('/NextSalah')
 def NextSalah():
     if app.config['Iqamahs']:
@@ -97,7 +205,7 @@ def NextSalah():
     
     Today_Times = dict(prayerTimesToday().json)
     
-    currentTime = datetime.now()
+    currentTime = datetime(2023,9,26,10,20)
     StartOfDay = datetime(currentTime.year, currentTime.month, currentTime.day, 0, 0, 0, 0)
 
     FajrHour = int(Iqamah_Times['Fajr'][:2]) if len(Iqamah_Times['Fajr']) else int(Today_Times['Fajr'][:2])
@@ -143,6 +251,11 @@ def NextSalah():
             'salah': 'Jummah',
             'time': Jummah.strftime("%a, %d %b %Y %H:%M")
         }
+    elif currentTime.weekday() == 4 and (currentTime - Sunrise).total_seconds() > 0 and (Asr - currentTime).total_seconds() > 0:
+        result = {
+            'salah': 'Asr',
+            'time': Asr.strftime("%a, %d %b %Y %H:%M")
+        }
     elif (currentTime - Sunrise).total_seconds() > 0 and (Dhuhr - currentTime).total_seconds() > 0:
         result = {
             'salah': 'Dhuhr',
@@ -179,17 +292,34 @@ def todayGreg():
 
 @app.route('/slideshowDelay')
 def slideshowDelay():
-    with open('./flask_api/data/AppSettings.json') as f: 
+    with open('./data/AppSettings.json') as f: 
         file_content = dict(json.load(f))
     return str(int(file_content["slideshow_delay"]))
 
-@app.route('/weatherAPI')
-def weatherAPI():
-    API_Key = 'a6f7364a3cec410c8bf00401232706'
-
-# @app.before_first_request
-# def before_first_request_func():
-#     pass
+# @app.route('/weatherAPI')
+# def weatherAPI():
+#     API_Key = 'a6f7364a3cec410c8bf00401232706'
+#     return
 
 if __name__ == '__main__':
+    # Start_Drive()
+    # Start_Docs()
+
+    # app.config['Last Refresh'] = datetime.now()
+
+    # folder_id = Get_Folder_ID()
+    # if folder_id == None:
+    #     print("'MSA TV' folder not found in drive")
+    #     sys.exit()
+    # app.config['folder_id'] = folder_id
+
+    # announcements_fileid = Get_FileID('announcements')
+    # if announcements_fileid == None:
+    #     print("'announcements' file not found in drive")
+    #     app.config['announcements_fileid'] = announcements_fileid
+    #     sys.exit()
+    # app.config['announcements_fileid'] = None
+
+    # app.run(host='0.0.0.0', port=7000)
+
     app.run(port=7000)

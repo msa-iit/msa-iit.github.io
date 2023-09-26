@@ -14,7 +14,7 @@ class Clock extends Component {
         this.setState({
             currentTime: this.getCurrentTime(),
         });
-        }, 60000); // 60000 milliseconds = 1 minute
+        }, 1000); // 60000 milliseconds = 1 minute
     }
 
     componentWillUnmount() {

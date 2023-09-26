@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, useRef } from 'react';
 import './Style.css'; // Import the CSS file for styling
 
 class Slideshow extends Component {
@@ -13,6 +13,8 @@ class Slideshow extends Component {
             // scalingPercentage: 80, // Initial scaling percentage (adjust as needed)
         };
         this.slideshow_delay = 10;
+        this.maxwidth = "1000px"
+        this.maxheight = "720px"
     }
 
     componentDidMount() {
@@ -57,7 +59,7 @@ class Slideshow extends Component {
             fading: true,
         });
 
-        // After a brief delay (500ms), update the state to display the next image and reset the fading animation
+        // After a brief delay, update the state to display the next image and reset the fading animation
         setTimeout(() => {
             this.setState({
                 currentImageIndex: nextIndex,
@@ -90,9 +92,31 @@ class Slideshow extends Component {
     //     }
     // };
 
+    ImageBoundaries(image) {
+        console.log('image: ', image)
+        if (image.current === null) {
+            return [this.maxheight, "auto"]
+        }
+        const { naturalWidth, naturalHeight } = image.current;
+        var width = naturalWidth
+        console.log('width: ', width)
+        var height = naturalHeight
+        console.log('height: ', height)
+
+        if (height < width) {
+            return ["auto", this.maxwidth]
+        }
+        else {
+            return [this.maxheight, "auto"]
+        }
+    }
+
     render() {
         const { currentImageIndex, imageList, fading } = this.state;
         const currentImage = imageList[currentImageIndex];
+        var dimensions = this.ImageBoundaries(React.createRef(currentImage));
+        console.log('dimensions[0]: ', dimensions[0])
+        console.log('dimensions[1]: ', dimensions[1])
 
         // Apply the fading animation class conditionally
         const imageClassName = `slider-image ${fading ? 'fade' : ''}`;
@@ -104,8 +128,8 @@ class Slideshow extends Component {
                     alt={`${currentImageIndex + 1}`}
                     onLoad={this.handleImageLoad}
                     style={{
-                        height: '720px',
-                        width: 'auto',
+                        height: dimensions[0],
+                        width: dimensions[1],
                     }}
                 />
             </div>

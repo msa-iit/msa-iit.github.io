@@ -1,1 +1,5 @@
 /flask_api/venv
+/flask_api/client_secrets.json
+/flask_api/mycreds.txt
+/flask_api/msa_service_account_key.json
+/flask_api/test.py
