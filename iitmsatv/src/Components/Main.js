@@ -238,6 +238,9 @@ class Main extends Component {
                     <div id="Announcements">
                         <Announcements></Announcements>
                     </div>
+                    <div>
+                        <label id="suggestLabel">This is a work in progress. Send suggestions to msa@iit.edu</label>
+                    </div>
                 </div>
             </body>
         )
