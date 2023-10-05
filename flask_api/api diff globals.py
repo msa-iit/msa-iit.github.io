@@ -12,8 +12,8 @@ from google.oauth2 import service_account
 import sys
 import time
 
-def Get_Drive():
-    filename = app.config['drive_creds_filename']
+def Start_Drive():
+    filename = drive_creds_filename
     gauth = GoogleAuth()
     # Try to load saved client credentials
     gauth.LoadCredentialsFile(filename)
@@ -29,25 +29,23 @@ def Get_Drive():
     # Save the current credentials to a file
     gauth.SaveCredentialsFile(filename)
 
-    return GoogleDrive(gauth)
+    google_drive = GoogleDrive(gauth)
 
-# def Refresh_Drive():
-#     gauth:GoogleAuth = app.config['google_drive']
-#     if gauth.access_token_expired:
-#         filename = app.config['drive_creds_filename']
-#         gauth.Refresh()
-#         gauth.SaveCredentialsFile(filename)
-#         app.config['google_drive'] = gauth
+def Refresh_Drive():
+    gauth:GoogleAuth = google_drive
+    if gauth.access_token_expired:
+        filename = drive_creds_filename
+        gauth.Refresh()
+        gauth.SaveCredentialsFile(filename)
+        google_drive = gauth
 
-def Get_Docs():
-    docs_creds_filename = app.config['docs_creds_filename']
+def Start_Docs():
     credentials = service_account.Credentials.from_service_account_file(docs_creds_filename, scopes=['https://www.googleapis.com/auth/documents'])
-    docs = build('docs', 'v1', credentials=credentials)
-    return docs
+    service = build('docs', 'v1', credentials=credentials)
+    google_docs = service
 
 def Get_Folder_ID() -> str:
-    drive = app.config['google_drive']
-    folder_name = app.config['folder_name']
+    drive = google_drive
     folder_list = drive.ListFile({'q': f"title='{folder_name}' and mimeType='application/vnd.google-apps.folder'"}).GetList()
     # If the folder is found, use its ID
     if len(folder_list) > 0:
@@ -56,7 +54,7 @@ def Get_Folder_ID() -> str:
         return None
 
 def Get_FileID(filename) -> str:
-    drive = app.config['google_drive']
+    drive = google_drive
     folder_list = drive.ListFile({'q': f"title='{filename}' and mimeType='application/vnd.google-apps.folder'"}).GetList()
     # If the folder is found, use its ID
     if len(folder_list) > 0:
@@ -65,7 +63,7 @@ def Get_FileID(filename) -> str:
         return None
 
 def Get_File_Content(file_id) -> str:
-    service = app.config['google_docs']
+    service = google_docs
     if(service == None):
         return "Docs not initialized"
     
@@ -80,66 +78,71 @@ def Get_File_Content(file_id) -> str:
 
     return doc_text
 
-# def init_app() -> Flask:
-#     app = Flask(__name__)
-#     # app.config.from_object('config.Config')
+def init_app() -> Flask:
+    app = Flask(__name__)
+    # app.config.from_object('config.Config')
     
-#     with app.app_context():
-#         Start_Drive()
-#         Start_Docs()
+    with app.app_context():
+        Start_Drive()
+        Start_Docs()
 
-#         app.config['Last Refresh'] = datetime.now()
+        Last_Refresh = datetime.now()
 
-#         folder_id = Get_Folder_ID()
-#         if folder_id == None:
-#             print("'MSA TV' folder not found in drive")
-#             sys.exit()
-#         app.config['folder_id'] = folder_id
+        folder_id = Get_Folder_ID()
+        if folder_id == None:
+            print("'MSA TV' folder not found in drive")
+            sys.exit()
+        folder_id = folder_id
 
-#         announcements_fileid = Get_FileID('announcements')
-#         if announcements_fileid == None:
-#             print("'announcements' folder not found in drive")
-#             app.config['announcements_fileid'] = announcements_fileid
-#             sys.exit()
-#         app.config['announcements_fileid'] = None
+        announcements_fileid = Get_FileID('announcements')
+        if announcements_fileid == None:
+            print("'announcements' folder not found in drive")
+            announcements_fileid = announcements_fileid
+            sys.exit()
+        announcements_fileid = None
 
-#         from . import routes
+        from . import routes
 
-#         return app 
+        return app 
 
-
-app = Flask(__name__)
-# app = init_app()
-CORS(app)
 
 # Global Variables
 # Store results of previous endpoints to avoid unnecessary computation.
-app.config['Iqamahs'] = {}
-app.config['Last Refresh'] = None
-app.config['drive_creds_filename'] = "mycreds.txt"
-app.config['docs_creds_filename'] = "msa_service_account_key.json"
-app.config['folder_name'] = "MSA TV"
-app.config['announcements_filename'] = "announcements"
+Iqamahs_save = {}
+google_drive = None
+google_docs = None
+Last_Refresh = None
+drive_creds_filename = "mycreds.txt"
+docs_creds_filename = "msa_service_account_key.json"
+folder_name = "MSA TV"
+folder_id = None
+announcements_filename = "announcements"
+announcements_fileid = None
+announcements = None
+# app = Flask(__name__)
+app = init_app()
+CORS(app)
+
 
 @app.route('/Announcements')
 def Announcements():
-    with open('./data/announcements.txt', 'r') as file:
-        file_data = file.read()
-    announcements = file_data.replace('\r','').split('\n')
-    return announcements
+    # with open('./data/announcements.txt', 'r') as file:
+    #     file_data = file.read()
+    # announcements = file_data.replace('\r','').split('\n')
+    # return announcements
 
-    # last_refresh:datetime = app.config['Last Refresh']
-    # if last_refresh.hour != datetime.now().hour:
-    #     Refresh_Drive()
-    #     app.config['Last Refresh'] = datetime.now()
-    #     app.config['announcements'] = Get_File_Content(app.config['announcements_fileid'])
-    # return app.config['announcements']
+    last_refresh:datetime = Last_Refresh
+    if last_refresh.hour != datetime.now().hour:
+        Refresh_Drive()
+        Last_Refresh = datetime.now()
+        announcements = Get_File_Content(announcements_fileid)
+    return announcements
 
 @app.route('/Iqamahs')
 def Iqamahs():
     with open('./data/IqamahTimes.json', 'r') as file:
         file_data = json.load(file)
-    app.config['Iqamahs'] = dict(file_data)
+    Iqamahs = dict(file_data)
     return jsonify(file_data)
 
 @app.route('/prayerAPI')
@@ -192,15 +195,15 @@ def todayHijri():
 
 @app.route('/NextSalah')
 def NextSalah():
-    if app.config['Iqamahs']:
-        Iqamah_Times = app.config['Iqamahs']
+    if Iqamahs:
+        Iqamah_Times = Iqamahs
     else:
         Iqamah_Times = dict(Iqamahs().json)
 
     
     Today_Times = dict(prayerTimesToday().json)
     
-    currentTime = datetime(2023,9,29,13,15)
+    currentTime = datetime(2023,9,26,10,20)
     StartOfDay = datetime(currentTime.year, currentTime.month, currentTime.day, 0, 0, 0, 0)
 
     FajrHour = int(Iqamah_Times['Fajr'][:2]) if len(Iqamah_Times['Fajr']) else int(Today_Times['Fajr'][:2])
@@ -297,24 +300,24 @@ def slideshowDelay():
 #     return
 
 if __name__ == '__main__':
-    # Start_Drive()
-    # Start_Docs()
+    Start_Drive()
+    Start_Docs()
 
-    # app.config['Last Refresh'] = datetime.now()
+    Last_Refresh = datetime.now()
 
-    # folder_id = Get_Folder_ID()
-    # if folder_id == None:
-    #     print("'MSA TV' folder not found in drive")
-    #     sys.exit()
-    # app.config['folder_id'] = folder_id
+    folder_id = Get_Folder_ID()
+    if folder_id == None:
+        print("'MSA TV' folder not found in drive")
+        sys.exit()
+    folder_id = folder_id
 
-    # announcements_fileid = Get_FileID('announcements')
-    # if announcements_fileid == None:
-    #     print("'announcements' file not found in drive")
-    #     app.config['announcements_fileid'] = announcements_fileid
-    #     sys.exit()
-    # app.config['announcements_fileid'] = None
+    announcements_fileid = Get_FileID('announcements')
+    if announcements_fileid == None:
+        print("'announcements' file not found in drive")
+        announcements_fileid = announcements_fileid
+        sys.exit()
+    announcements_fileid = None
 
-    # app.run(host='0.0.0.0', port=7000)
+    app.run(host='0.0.0.0', port=7000)
 
-    app.run(port=7000)
+    # app.run(port=7000)
