@@ -200,7 +200,7 @@ def NextSalah():
     
     Today_Times = dict(prayerTimesToday().json)
     
-    currentTime = datetime(2023,9,29,13,15)
+    currentTime = datetime.now()
     StartOfDay = datetime(currentTime.year, currentTime.month, currentTime.day, 0, 0, 0, 0)
 
     FajrHour = int(Iqamah_Times['Fajr'][:2]) if len(Iqamah_Times['Fajr']) else int(Today_Times['Fajr'][:2])
