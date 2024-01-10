@@ -16,7 +16,9 @@ class PrayerTime extends Component {
 
     formatTime(time){
         var newTime = `${time}`;    //Quick way to create full copy of 'time'. Can't use var newTime = time; Because that causes newtime -> time which would modify 'time' directly. We don't want that we want a full copy of 'time'
-        newTime = newTime.replace('(CDT)','');
+        for (const phrase of ['CDT', 'CST', '()']) {
+            newTime = newTime.replace(phrase,'');
+        }
 
         if(newTime.length === 0){
             return newTime;
@@ -29,6 +31,9 @@ class PrayerTime extends Component {
         }
         else if (hour === 12){
             newTime = newTime + ' PM';
+        }
+        else if (hour < 10) {
+            newTime = hour.toString() + newTime.substring(2) + ' AM';
         }
         else{
             newTime = newTime + ' AM';
@@ -65,10 +70,10 @@ class PrayerTime extends Component {
                     <label>{this.formatTime(this.props.start)}</label>
                 </div>
                 <div>
-                    <label>{this.props.type}</label>
+                    <label>{this.props.prayer}</label>
                 </div>
-                <img    src={this.getPhotoPath(this.props.type)} 
-                            alt={this.props.type}
+                <img    src={this.getPhotoPath(this.props.prayer)} 
+                            alt={this.props.prayer}
                             style={{ width: this.picsize, height: this.picsize, objectFit: 'cover' }}
                     ></img>
                 <div>

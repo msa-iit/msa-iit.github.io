@@ -38,14 +38,17 @@ class Countdown extends React.Component {
         if(!this.start && this.props.finish_time !== this.finish_time ){            
             console.log("starting countdown")
             var Message = "";
-            if(this.props.salah === "End of Day"){
-                Message = "End of Day is in"
-            }
-            else if (this.props.salah === "Sunrise") {
+            if (this.props.salah === "Sunrise") {
                 Message = "Sunrise is in"
             }
-            else{
-                Message = this.props.salah + " Salah is in"
+            else if (this.props.type === "time") {
+                Message = this.props.salah + " is in"
+            }
+            else if (this.props.type === "iqamah") {
+                Message = this.props.salah + " Iqamah is in"
+            }
+            else if (this.props.salah === "Jummah" && this.props.type === "khutbah") {   //For Jummah only
+                Message = this.props.salah + " Khutbah is in"
             }
             this.setState({
                 salah: this.props.salah,

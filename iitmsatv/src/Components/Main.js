@@ -2,7 +2,6 @@ import React, { Component } from 'react'
 import PrayerTime from './PrayerTime'
 import ListGroup from 'react-bootstrap/ListGroup';
 import Countdown from './Countdown';
-import Announcements from "./Announcements"
 import Slideshow from './Slideshow'
 import msa_logo from "../images/msa_logo.png"
 import './Style.css'
@@ -51,9 +50,14 @@ class Main extends Component {
             },
             Jummah: {
                 start: "",
+                iqamah: "",
+                next: false
             },
-            next_salah_time: null,
-            next_salah:"",
+            Next_Salah: {
+                prayer: null,
+                type: null,
+                time: null
+            }
         }
     }
 
@@ -79,7 +83,7 @@ class Main extends Component {
 
     /**
      * Set the State with new prayer time data
-     */
+    */
     setPrayerTimeData(){
         Promise.all([fetch("http://localhost:7000/Iqamahs").then(res => res.json()),
                     fetch("http://localhost:7000/prayerTimesToday").then(res => res.json()),
@@ -124,10 +128,15 @@ class Main extends Component {
                     next: nextSalah.prayer === "Isha"
                 },
                 Jummah: {
-                    start: iqamah_times.Jummah,
+                    start: iqamah_times.JummahKhutbah,
+                    iqamah: iqamah_times.JummahIqamah,
+                    next: nextSalah.prayer === "Jummah"
                 },
-                next_salah_time: nextSalah.time,
-                next_salah: nextSalah.salah,
+                Next_Salah: {
+                    prayer: nextSalah.prayer,
+                    type: nextSalah.type,
+                    time: nextSalah.time
+                }
             }))
             console.log("MAIN: State is set");
             this.setTimes = false;
@@ -143,8 +152,11 @@ class Main extends Component {
      * @returns {string}
      */
     formatTime(time){
+        // console.log('time: ', time)
         var newTime = `${time}`;    //Quick way to create full copy of 'time'. Can't use var newTime = time; Because that causes newtime -> time which would modify 'time' directly. We don't want that we want a full copy of 'time'
-        newTime = newTime.replace('(CDT)','');
+        for (const phrase of ['CDT', 'CST', '()']) {
+            newTime = newTime.replace(phrase,'');
+        }
 
         if(newTime.length === 0){
             return newTime;
@@ -157,6 +169,9 @@ class Main extends Component {
         }
         else if (hour === 12){
             newTime = newTime + ' PM';
+        }
+        else if (hour < 10) {
+            newTime = hour.toString() + newTime.substring(2) + ' AM';
         }
         else{
             newTime = newTime + ' AM';
@@ -175,33 +190,29 @@ class Main extends Component {
                         </div>
                         <div id='PrayerCardsList'>
                             <ListGroup horizontal>
-                                <ListGroup.Item active={this.state.next_salah === "Sunrise"}>
-                                    <PrayerTime type='Fajr' start={this.state.Fajr.start} iqamah={this.state.Fajr.iqamah} selected={this.state.Fajr.selected}></PrayerTime>
+                                <ListGroup.Item active={this.state.Next_Salah.prayer === "Sunrise"}>
+                                    <PrayerTime prayer='Fajr' start={this.state.Fajr.start} iqamah={this.state.Fajr.iqamah} selected={this.state.Fajr.selected}></PrayerTime>
                                 </ListGroup.Item>
 
-                                <ListGroup.Item active={this.state.next_salah === "Dhuhr"}>
-                                    <PrayerTime type='Sunrise' start={this.state.Sunrise.start} iqamah={""} selected={this.state.Sunrise.selected}></PrayerTime>
+                                <ListGroup.Item active={this.state.Next_Salah.prayer === "Dhuhr"}>
+                                    <PrayerTime prayer='Sunrise' start={this.state.Sunrise.start} iqamah={""} selected={this.state.Sunrise.selected}></PrayerTime>
                                 </ListGroup.Item>
 
-                                <ListGroup.Item active={this.state.next_salah === "Asr"}>
-                                    <PrayerTime type='Dhuhr' start={this.state.Dhuhr.start} iqamah={this.state.Dhuhr.iqamah} selected={this.state.Dhuhr.selected}></PrayerTime>
+                                <ListGroup.Item active={this.state.Next_Salah.prayer === "Asr"}>
+                                    <PrayerTime prayer='Dhuhr' start={this.state.Dhuhr.start} iqamah={this.state.Dhuhr.iqamah} selected={this.state.Dhuhr.selected}></PrayerTime>
                                 </ListGroup.Item>
 
-                                <ListGroup.Item active={this.state.next_salah === "Maghrib"}>
-                                    <PrayerTime type='Asr' start={this.state.Asr.start} iqamah={this.state.Asr.iqamah} selected={this.state.Asr.selected}></PrayerTime>
+                                <ListGroup.Item active={this.state.Next_Salah.prayer === "Maghrib"}>
+                                    <PrayerTime prayer='Asr' start={this.state.Asr.start} iqamah={this.state.Asr.iqamah} selected={this.state.Asr.selected}></PrayerTime>
                                 </ListGroup.Item>
 
-                                <ListGroup.Item active={this.state.next_salah === "Isha"}>
-                                    <PrayerTime type='Maghrib' start={this.state.Maghrib.start} iqamah={this.state.Maghrib.iqamah} selected={this.state.Maghrib.selected}></PrayerTime>
+                                <ListGroup.Item active={this.state.Next_Salah.prayer === "Isha"}>
+                                    <PrayerTime prayer='Maghrib' start={this.state.Maghrib.start} iqamah={this.state.Maghrib.iqamah} selected={this.state.Maghrib.selected}></PrayerTime>
                                 </ListGroup.Item>
 
-                                <ListGroup.Item active={this.state.next_salah === "Fajr"}>
-                                    <PrayerTime type='Isha' start={this.state.Isha.start} iqamah={this.state.Isha.iqamah} selected={this.state.Isha.selected}></PrayerTime>
+                                <ListGroup.Item active={this.state.Next_Salah.prayer === "Fajr"}>
+                                    <PrayerTime prayer='Isha' start={this.state.Isha.start} iqamah={this.state.Isha.iqamah} selected={this.state.Isha.selected}></PrayerTime>
                                 </ListGroup.Item>
-
-                                {/* <ListGroup.Item>
-                                    <PrayerTime type='Jummah' start={this.state.Jummah.start} iqamah="" selected={this.state.Jummah.selected}></PrayerTime>
-                                </ListGroup.Item> */}
                             </ListGroup>
                         </div>
                     </div>
@@ -219,7 +230,10 @@ class Main extends Component {
                                 </div>
                                 <hr className="centered-hr"></hr>
                                 <label id='CountdownDisplay'>
-                                    <Countdown salah={this.state.next_salah} finish_time={this.state.next_salah_time} callback={this.nextPrayerCountdown}></Countdown>
+                                    <Countdown  salah={this.state.Next_Salah.prayer}
+                                                type={this.state.Next_Salah.type}
+                                                finish_time={this.state.Next_Salah.time} 
+                                                callback={this.nextPrayerCountdown}></Countdown>
                                 </label>
                                 <hr className="centered-hr"></hr>
                                 <div id='DatesContainer'>
@@ -231,12 +245,12 @@ class Main extends Component {
                                     </div>
                                 </div>
                                 <h2 id='JummahDisplay'>
-                                    Jummah <br></br> {this.formatTime(this.state.Jummah.start)}
+                                    Jummah Khutbah <br></br> {this.formatTime(this.state.Jummah.start)}
+                                </h2>
+                                <h2 id='JummahDisplay'>
+                                    Jummah Salah <br></br> {this.formatTime(this.state.Jummah.iqamah)}
                                 </h2>
                         </div>
-                    </div>
-                    <div id="Announcements">
-                        <Announcements></Announcements>
                     </div>
                     <div>
                         <label id="suggestLabel">This is a work in progress. Send suggestions to msa@iit.edu</label>
