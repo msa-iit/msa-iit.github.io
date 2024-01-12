@@ -100,6 +100,7 @@ class Slideshow extends Component {
             <div className={imageClassName} style={{ alignItems: 'center' }}>
                 <img
                     src={currentImage}
+                    referrerPolicy="no-referrer"
                     alt={`${currentImageIndex + 1}`}
                     onLoad={this.handleImageLoad}
                     style={{

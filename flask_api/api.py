@@ -72,7 +72,10 @@ def SlideshowImageURLs():
         folder_id = file_data["SlideshowPictures_folder_id"]
 
     file_list = drive.ListFile({'q': f"'{folder_id}' in parents and mimeType contains 'image/' and trashed = false"}).GetList()
-    image_list = [file['webContentLink'].replace('&export=download','') for file in file_list]
+    # image_list = [file['webContentLink'].replace('&export=download','') for file in file_list]
+    image_list = [f"https://lh3.google.com/u/0/d/{file['id']}" for file in file_list]
+    # image_list = [f"https://drive.google.com/uc?export=view&id={file['id']}" for file in file_list]
+
     return jsonify(image_list)
 
 @app.route('/Iqamahs')
