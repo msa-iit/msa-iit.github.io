@@ -28,21 +28,25 @@ class Slideshow extends Component {
     }
 
     startSlideshow = () => {
-        // Set an interval to switch images every 10 seconds
         Promise.all([fetch("http://localhost:7000/SlideshowDelay").then(res => res.text())])
         .then(([slideshowDelay]) => {
             this.slideshow_delay = parseInt(slideshowDelay);
             this.loadImageList();
             this.slideshowInterval = setInterval(this.nextImage, this.slideshow_delay * 1000);
         })
+
     };
 
     // Function to load the image list from the folder
     loadImageList = () => {
-        Promise.resolve(fetch("http://localhost:7000/SlideshowImageURLs").then(res => res.json())).then((imageList) =>{
+        Promise.resolve(fetch("http://localhost:7000/LoadImages").then(res => res.json())).then((imageList) =>{
             console.log(imageList)
-            this.setState({ imageList });
+            // this.setState({ imageList });
         })
+        const imageContext = require.context('../images/Slideshow', false, /\.(jpg|jpeg|png|gif)$/);
+        const imageList = imageContext.keys().map(imageContext);
+        console.log('imageList: ', imageList)
+        this.setState({ imageList });
     };
 
     nextImage = () => {

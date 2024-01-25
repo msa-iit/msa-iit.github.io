@@ -64,19 +64,49 @@ app.config['Iqamahs'] = {}
 app.config['drive_creds_filename'] = "mycreds.txt"
 app.config['docs_creds_filename'] = "msa_service_account_key.json"
 
-@app.route('/SlideshowImageURLs')
-def SlideshowImageURLs():
+@app.route('/LoadImages')
+def LoadImages():
     drive = Get_Drive()
     with open('./data/MetaData.json', 'r') as file:
         file_data = json.load(file)
         folder_id = file_data["SlideshowPictures_folder_id"]
 
-    file_list = drive.ListFile({'q': f"'{folder_id}' in parents and mimeType contains 'image/' and trashed = false"}).GetList()
+    drive_images_raw = drive.ListFile({'q': f"'{folder_id}' in parents and mimeType contains 'image/' and trashed = false"}).GetList()
+    drive_images = {file['title']:file['modifiedDate'] for file in drive_images_raw if file['mimeType'].startswith('image/')}
     # image_list = [file['webContentLink'].replace('&export=download','') for file in file_list]
-    image_list = [f"https://lh3.google.com/u/0/d/{file['id']}" for file in file_list]
+    # image_list = [f"https://lh3.google.com/u/0/d/{file['id']}" for file in file_list]
     # image_list = [f"https://drive.google.com/uc?export=view&id={file['id']}" for file in file_list]
 
-    return jsonify(image_list)
+
+    with open('./data/slide_image_data.json', 'r') as file:
+        current_images = json.load(file)
+
+    images_to_add = []
+    if drive_images:
+        for image_title in drive_images.keys():
+            if (image_title not in current_images) or (drive_images[image_title] != current_images[image_title]): 
+                images_to_add.append(image_title)
+
+    images_to_delete = []
+    if current_images:
+        for image_title in current_images.keys():
+            if (image_title not in drive_images) or (current_images[image_title] != drive_images[image_title]): 
+                images_to_delete.append(image_title)
+
+    current_directory = os.path.dirname(os.path.realpath(__file__))
+    destination_folder = os.path.join(current_directory, '..' ,'iitmsatv', 'src', 'images', 'Slideshow')
+
+    for file in drive_images_raw:
+        if file['title'] in images_to_add:
+            file.GetContentFile(os.path.join(destination_folder, file['title']))
+
+    for file in images_to_delete:
+        os.remove(os.path.join(destination_folder, file))
+
+    with open('./data/slide_image_data.json', 'w') as file:
+        json.dump(drive_images, file)
+
+    return jsonify(drive_images)
 
 @app.route('/Iqamahs')
 def Iqamahs():
