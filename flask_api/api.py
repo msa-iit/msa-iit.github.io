@@ -15,7 +15,7 @@ import requests
 import json
 
 
-def Get_Drive():
+def Start_Drive():
     filename = app.config['drive_creds_filename']
     gauth = GoogleAuth()
     # Try to load saved client credentials
@@ -31,6 +31,7 @@ def Get_Drive():
         gauth.Authorize()
     # Save the current credentials to a file
     gauth.SaveCredentialsFile(filename)
+<<<<<<< HEAD
     return GoogleDrive(gauth)
 
 # def Get_Docs():
@@ -43,15 +44,94 @@ def Get_Drive():
 #     service = app.config['google_docs']
 #     if(service == None):
 #         return "Docs not initialized"
+=======
+
+    app.config['google_drive'] = GoogleDrive(gauth)
+
+def Refresh_Drive():
+    gauth:GoogleAuth = app.config['google_drive']
+    if gauth.access_token_expired:
+        filename = app.config['drive_creds_filename']
+        gauth.Refresh()
+        gauth.SaveCredentialsFile(filename)
+        app.config['google_drive'] = gauth
+
+def Start_Docs():
+    docs_creds_filename = app.config['docs_creds_filename']
+    credentials = service_account.Credentials.from_service_account_file(docs_creds_filename, scopes=['https://www.googleapis.com/auth/documents'])
+    service = build('docs', 'v1', credentials=credentials)
+    app.config['google_docs'] = service
+
+def Get_Folder_ID() -> str:
+    drive = app.config['google_drive']
+    folder_name = app.config['folder_name']
+    folder_list = drive.ListFile({'q': f"title='{folder_name}' and mimeType='application/vnd.google-apps.folder'"}).GetList()
+    # If the folder is found, use its ID
+    if len(folder_list) > 0:
+        return folder_list[0]['id']
+    else:
+        return None
+
+def Get_FileID(filename) -> str:
+    drive = app.config['google_drive']
+    folder_list = drive.ListFile({'q': f"title='{filename}' and mimeType='application/vnd.google-apps.folder'"}).GetList()
+    # If the folder is found, use its ID
+    if len(folder_list) > 0:
+        return folder_list[0]['id']
+    else:
+        return None
+
+def Get_File_Content(file_id) -> str:
+    service = app.config['google_docs']
+    if(service == None):
+        return "Docs not initialized"
+>>>>>>> parent of 606e8c8 (commit in order to pull working TV configuration)
     
 #     document = service.documents().get(documentId=file_id).execute()
 #     document_content = document.get('body', {}).get('content', '')
 
+<<<<<<< HEAD
 #     # Extract and print the text content
 #     doc_text = ''
 #     for elem in document_content:
 #         if 'paragraph' in elem:
 #             doc_text += elem['paragraph']['elements'][0]['textRun']['content']
+=======
+    # Extract and print the text content
+    doc_text = ''
+    for elem in document_content:
+        if 'paragraph' in elem:
+            doc_text += elem['paragraph']['elements'][0]['textRun']['content']
+
+    return doc_text
+
+def init_app() -> Flask:
+    app = Flask(__name__)
+    # app.config.from_object('config.Config')
+    
+    with app.app_context():
+        Start_Drive()
+        Start_Docs()
+
+        app.config['Last Refresh'] = datetime.now()
+
+        folder_id = Get_Folder_ID()
+        if folder_id == None:
+            print("'MSA TV' folder not found in drive")
+            sys.exit()
+        app.config['folder_id'] = folder_id
+
+        announcements_fileid = Get_FileID('announcements')
+        if announcements_fileid == None:
+            print("'announcements' folder not found in drive")
+            app.config['announcements_fileid'] = announcements_fileid
+            sys.exit()
+        app.config['announcements_fileid'] = None
+
+        from . import routes
+
+        return app 
+>>>>>>> parent of 606e8c8 (commit in order to pull working TV configuration)
 
 #     return doc_text
 
@@ -61,8 +141,21 @@ CORS(app)
 # Global Variables
 # Store results of previous endpoints to avoid unnecessary computation.
 app.config['Iqamahs'] = {}
+<<<<<<< HEAD
 app.config['drive_creds_filename'] = "mycreds.txt"
 app.config['docs_creds_filename'] = "msa_service_account_key.json"
+=======
+app.config['google_drive'] = None
+app.config['google_docs'] = None
+app.config['Last Refresh'] = None
+app.config['drive_creds_filename'] = "mycreds.txt"
+app.config['docs_creds_filename'] = "msa_service_account_key.json"
+app.config['folder_name'] = "MSA TV"
+app.config['folder_id'] = None
+app.config['announcements_filename'] = "announcements"
+app.config['announcements_fileid'] = None
+app.config['announcements'] = None
+>>>>>>> parent of 606e8c8 (commit in order to pull working TV configuration)
 
 @app.route('/LoadImages')
 def LoadImages():
@@ -188,8 +281,12 @@ def NextSalah():
     
     Today_Times = dict(prayerTimesToday().json)
     
+<<<<<<< HEAD
     currentTime = datetime.now()
     # currentTime = datetime(2023, 10, 21, 12, 0, 0)
+=======
+    currentTime = datetime(2023,9,26,10,20)
+>>>>>>> parent of 606e8c8 (commit in order to pull working TV configuration)
     StartOfDay = datetime(currentTime.year, currentTime.month, currentTime.day, 0, 0, 0, 0)
 
     FajrHour = int(Today_Times['Fajr'][:2])
