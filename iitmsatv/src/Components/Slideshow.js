@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import './Style.css'; // Import the CSS file for styling
+import NoImageDefault from "../images/msa_logo.png"
 
 class Slideshow extends Component {
     constructor(props) {
@@ -41,12 +42,15 @@ class Slideshow extends Component {
     loadImageList = () => {
         Promise.resolve(fetch("http://localhost:7000/LoadImages").then(res => res.json())).then((imageList) =>{
             console.log(imageList)
-            // this.setState({ imageList });
+            if(imageList.length === 0){
+                imageList = [NoImageDefault]
+            }
+            this.setState({ imageList });
         })
-        const imageContext = require.context('../images/Slideshow', false, /\.(jpg|jpeg|png|gif)$/);
-        const imageList = imageContext.keys().map(imageContext);
-        console.log('imageList: ', imageList)
-        this.setState({ imageList });
+        // const imageContext = require.context('../images/Slideshow', false, /\.(jpg|jpeg|png|gif)$/);
+        // var imageList = imageContext.keys().map(imageContext);
+        // console.log('imageList: ', imageList)
+        // this.setState({ imageList });
     };
 
     nextImage = () => {
@@ -104,8 +108,7 @@ class Slideshow extends Component {
             <div className={imageClassName} style={{ alignItems: 'center' }}>
                 <img
                     src={currentImage}
-                    referrerPolicy="no-referrer"
-                    alt={`${currentImageIndex + 1}`}
+                    alt={"Slideshow Not Available"}
                     onLoad={this.handleImageLoad}
                     style={{
                         height: dimensions[0],

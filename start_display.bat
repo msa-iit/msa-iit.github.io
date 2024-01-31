@@ -2,7 +2,8 @@
 
 :: Start flask backend
 cd flask_api
-start cmd /C python api.py
+call venv\Scripts\activate
+start cmd /K python api.py
 
 :: Start react frontend
 cd ..

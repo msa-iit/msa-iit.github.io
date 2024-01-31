@@ -74,10 +74,9 @@ class Main extends Component {
 
     /**
      * Callback function for Countdown Component
-     * Keep it in the "function = () => {}" formal in order for the callback functionality to work 
+     * Keep it in the "function = () => {}" format in order for the callback functionality to work 
      */
     nextPrayerCountdown = () => {
-        console.log('nextPrayerCountdown: ');
         this.setPrayerTimeData();
     }
 
@@ -94,7 +93,6 @@ class Main extends Component {
             this.Today_Prayer_Times = today_times;
             this.Iqamah_Times = iqamah_times;
             this.start = true;
-
             this.setState(({
                 Gregorian_Date: greg_date,
                 Hijri_Date: hijri_date,
@@ -103,7 +101,7 @@ class Main extends Component {
                     iqamah: iqamah_times.Fajr,
                     next: nextSalah.prayer === "Fajr"
                 },
-                Sunrise: {  //Yeah I just labeled Sunrise as a prayer just so the countdown and Sunrise time component would work simply. It does not have an Iqamah property tho
+                Sunrise: {  //I just labeled Sunrise as a prayer just so the countdown and Sunrise time component would work simply. It does not have an Iqamah property tho
                     start: today_times.Sunrise,
                     next: nextSalah.prayer === "Sunrise"
                 },
@@ -128,8 +126,8 @@ class Main extends Component {
                     next: nextSalah.prayer === "Isha"
                 },
                 Jummah: {
-                    start: iqamah_times.JummahKhutbah,
-                    iqamah: iqamah_times.JummahIqamah,
+                    start: iqamah_times["Jummah Khutbah"],
+                    iqamah: iqamah_times["Jummah Iqamah"],
                     next: nextSalah.prayer === "Jummah"
                 },
                 Next_Salah: {

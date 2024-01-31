@@ -1,12 +1,8 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
-from pydrive.auth import GoogleAuth
-from pydrive.drive import GoogleDrive
-from oauth2client.client import GoogleCredentials
-from oauth2client.service_account import ServiceAccountCredentials
-from googleapiclient.discovery import build
-from google.oauth2 import service_account
-import gspread
+import dropbox
+from openpyxl import load_workbook
+from io import BytesIO
 from datetime import datetime, timedelta
 import sys
 import time
@@ -15,120 +11,184 @@ import requests
 import json
 
 
-def Get_Drive():
-    filename = app.config['drive_creds_filename']
-    gauth = GoogleAuth()
-    # Try to load saved client credentials
-    gauth.LoadCredentialsFile(filename)
-    if gauth.credentials is None:
-        # Authenticate if they're not there
-        gauth.LocalWebserverAuth()
-    elif gauth.access_token_expired:
-        # Refresh them if expired
-        gauth.Refresh()
-    else:
-        # Initialize the saved creds
-        gauth.Authorize()
-    # Save the current credentials to a file
-    gauth.SaveCredentialsFile(filename)
-    return GoogleDrive(gauth)
+def getDropbox():
+    # Your Dropbox API key
+    with open("./data/API_keys.json", 'r') as json_file:
+        data = json.load(json_file)
+        APP_KEY = data["Dropbox_app_key"]
+        APP_SECRET = data["Dropbox_app_secret"]
+        REFRESH_TOKEN = data["Dropbox_refresh_token"]
 
-# def Get_Docs():
-#     docs_creds_filename = app.config['docs_creds_filename']
-#     credentials = service_account.Credentials.from_service_account_file(docs_creds_filename, scopes=['https://www.googleapis.com/auth/documents'])
-#     docs = build('docs', 'v1', credentials=credentials)
-#     return docs
+    return dropbox.Dropbox(oauth2_refresh_token=REFRESH_TOKEN, app_key=APP_KEY, app_secret=APP_SECRET)
 
-# def Get_Docs_File_Content(file_id) -> str:
-#     service = app.config['google_docs']
-#     if(service == None):
-#         return "Docs not initialized"
+# # Am I allowed to call the dropbox api or not
+# def call_API(call):
+#     DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+#     with open(f"./data/MetaData.json", 'r') as file:
+#         data = json.load(file)
     
-#     document = service.documents().get(documentId=file_id).execute()
-#     document_content = document.get('body', {}).get('content', '')
+#     last_call_str = data[f"Last_{call}_Call"]
 
-#     # Extract and print the text content
-#     doc_text = ''
-#     for elem in document_content:
-#         if 'paragraph' in elem:
-#             doc_text += elem['paragraph']['elements'][0]['textRun']['content']
+#     try:
+#         last_call_date = datetime.strptime(last_call_str, DATE_FORMAT)
+#     except ValueError:
+#         return False
+    
+#     if datetime.now() - last_call_date > timedelta(minutes=2):
+#         return True
+#     return False
 
-#     return doc_text
 
 app = Flask(__name__)
 CORS(app)
 
 # Global Variables
-# Store results of previous endpoints to avoid unnecessary computation.
-app.config['Iqamahs'] = {}
 app.config['drive_creds_filename'] = "mycreds.txt"
 app.config['docs_creds_filename'] = "msa_service_account_key.json"
+app.config['API_keys_filepath'] = "./data/API_keys.json"
+
 
 @app.route('/LoadImages')
 def LoadImages():
-    drive = Get_Drive()
-    with open('./data/MetaData.json', 'r') as file:
-        file_data = json.load(file)
-        folder_id = file_data["SlideshowPictures_folder_id"]
+    IMAGES_FILE_PATH = "/MSA_TV/Slideshow Pictures"
 
-    drive_images_raw = drive.ListFile({'q': f"'{folder_id}' in parents and mimeType contains 'image/' and trashed = false"}).GetList()
-    drive_images = {file['title']:file['modifiedDate'] for file in drive_images_raw if file['mimeType'].startswith('image/')}
-    # image_list = [file['webContentLink'].replace('&export=download','') for file in file_list]
-    # image_list = [f"https://lh3.google.com/u/0/d/{file['id']}" for file in file_list]
-    # image_list = [f"https://drive.google.com/uc?export=view&id={file['id']}" for file in file_list]
-
-
-    with open('./data/slide_image_data.json', 'r') as file:
-        current_images = json.load(file)
-
-    images_to_add = []
-    if drive_images:
-        for image_title in drive_images.keys():
-            if (image_title not in current_images) or (drive_images[image_title] != current_images[image_title]): 
-                images_to_add.append(image_title)
-
-    images_to_delete = []
-    if current_images:
-        for image_title in current_images.keys():
-            if (image_title not in drive_images) or (current_images[image_title] != drive_images[image_title]): 
-                images_to_delete.append(image_title)
-
-    current_directory = os.path.dirname(os.path.realpath(__file__))
-    destination_folder = os.path.join(current_directory, '..' ,'iitmsatv', 'src', 'images', 'Slideshow')
-
-    for file in drive_images_raw:
-        if file['title'] in images_to_add:
-            file.GetContentFile(os.path.join(destination_folder, file['title']))
-
-    for file in images_to_delete:
-        os.remove(os.path.join(destination_folder, file))
-
-    with open('./data/slide_image_data.json', 'w') as file:
-        json.dump(drive_images, file)
-
-    return jsonify(drive_images)
+    dbx = getDropbox()
+    links = []
+    entries = dbx.files_list_folder(IMAGES_FILE_PATH).entries
+    for entry in entries:
+        if isinstance(entry, dropbox.files.FileMetadata):
+            try:
+                # Try to get existing shared links for the file
+                shared_links = dbx.sharing_list_shared_links(path=entry.path_lower).links
+                # Check if there are any existing shared links
+                if shared_links:
+                    link = shared_links[0].url.replace("dl=0", "raw=1")  # Use the first existing link
+                else:
+                    # No existing links, create a new one
+                    shared_link_metadata = dbx.sharing_create_shared_link_with_settings(entry.path_lower)
+                    link = shared_link_metadata.url.replace("dl=0", "raw=1")
+                links.append(link)
+            except dropbox.exceptions.ApiError as api_err:
+                print(f"LoadImages: Error obtaining link for {entry.path_lower}: {api_err}")
+    return links
 
 @app.route('/Iqamahs')
 def Iqamahs():
-    with open('./data/MetaData.json', 'r') as file:
-        file_data = json.load(file)
-        file_id = file_data["Iqamahs_file_id"]
+    dbx = getDropbox()
 
-    docs_creds_filename = app.config['docs_creds_filename']
+    with open("./data/MetaData.json", 'r') as file:
+        IQAMAHS_FILE_PATH = json.load(file)["Iqamahs_Filepath"]
 
-    # Define the scope and credentials
-    scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    credentials = ServiceAccountCredentials.from_json_keyfile_name(docs_creds_filename, scope)
-    
-    # Authorize the client with the credentials
-    client = gspread.authorize(credentials)
-    sheet = client.open_by_key(file_id).sheet1
+    # Get metadata for the file
+    metadata = dbx.files_get_metadata(IQAMAHS_FILE_PATH)
+    modified_date = metadata.server_modified
 
-    prayers = sheet.range('A2:A8')
-    times = sheet.range('B2:B8')
-    iqamahs = {prayers[i].value : times[i].value for i in range(len(prayers))}
+    # Get saved modified date
+    with open("./data/Dropbox_Last_Modified.json", 'r') as json_file:
+        dropbox_json = json.load(json_file)
+        saved_modified_date = dropbox_json['Iqamahs']
+
+    # Compare the dates
+    if saved_modified_date != str(modified_date):
+        # Update the saved modified date
+        with open("./data/Dropbox_Last_Modified.json", 'w') as json_file:
+            dropbox_json['Iqamahs'] = str(modified_date)
+            json.dump(dropbox_json, json_file)
+
+        # Download the file
+        _, res = dbx.files_download(IQAMAHS_FILE_PATH)
+        
+        # Load the workbook
+        workbook = load_workbook(filename=BytesIO(res.content))
+        
+        # Assuming your data is in the first sheet, adjust as necessary
+        first_sheet_name = workbook.sheetnames[0]
+        sheet = workbook[first_sheet_name]
+        
+        # Construct json object for iqamahs data
+        iqamahs = {
+            "Fajr": sheet['B2'].value,
+            "Dhuhr": sheet['B3'].value,
+            "Asr": sheet['B4'].value,
+            "Maghrib": sheet['B5'].value,
+            "Isha": sheet['B6'].value,
+            "Jummah Khutbah": sheet['B7'].value,
+            "Jummah Iqamah": sheet['B8'].value
+        }
+        
+        with open("./data/Iqamahs_Save.json", 'w') as json_file:
+            json.dump(iqamahs, json_file)
+
+    else:
+        with open("./data/Iqamahs_Save.json", 'r') as json_file:
+            iqamahs = json.load(json_file)
+
+    for key in iqamahs.keys():
+        if not iqamahs[key]:
+            iqamahs[key] = ""
 
     return jsonify(iqamahs)
+
+@app.route('/SlideshowDelay')
+def slideshowDelay():
+    dbx = getDropbox()
+
+    with open("./data/MetaData.json", 'r') as file:
+        TV_SETTINGS_FILE_PATH = json.load(file)["TV_settings_Filepath"]
+
+    # Get metadata for the file
+    metadata = dbx.files_get_metadata(TV_SETTINGS_FILE_PATH)
+    modified_date = metadata.server_modified
+
+    # Get saved modified date
+    with open("./data/Dropbox_Last_Modified.json", 'r') as json_file:
+        dropbox_json = json.load(json_file)
+        saved_modified_date = dropbox_json['TV Settings']
+
+    # Compare the dates
+    if saved_modified_date != str(modified_date):
+        # Update the saved modified date
+        with open("./data/Dropbox_Last_Modified.json", 'w') as json_file:
+            dropbox_json['TV Settings'] = str(modified_date)
+            json.dump(dropbox_json, json_file)
+
+        # Download the file
+        _, res = dbx.files_download(TV_SETTINGS_FILE_PATH)
+        
+        # Load the workbook
+        workbook = load_workbook(filename=BytesIO(res.content))
+        
+        # Assuming your data is in the first sheet, adjust as necessary
+        first_sheet_name = workbook.sheetnames[0]
+        sheet = workbook[first_sheet_name]
+        
+        # Construct json object for iqamahs data
+        for i in range(2,50):
+            if sheet[f'A{i}'].value == "Slideshow Delay":
+                try:
+                    if sheet[f'B{i}'].value:
+                        delay = int(sheet[f'B{i}'].value)
+                    else:
+                        print("Value for 'Slideshow Delay' found in excel file in Dropbox does not appear to have a value assigned. Defaulting to 15s delay")
+                        delay = 15
+                except ValueError:
+                    print("Value for 'Slideshow Delay' found in excel file in Dropbox does not appear to be an integer. Defaulting to 15s delay")
+                    delay = 15
+                break
+        
+        with open("./data/TV_Settings_Save.json", 'r') as json_file:
+            settings = json.load(json_file)
+        
+        settings["Slideshow Delay"] = delay
+
+        with open("./data/TV_Settings_Save.json", 'w') as json_file:
+            json.dump(settings, json_file)
+
+    else:
+        with open("./data/TV_Settings_Save.json", 'r') as json_file:
+            delay = json.load(json_file)["Slideshow Delay"]
+
+    return str(delay)
 
 @app.route('/prayerAPI')
 def prayerAPI():
@@ -180,14 +240,10 @@ def todayHijri():
 
 @app.route('/NextSalah')
 def NextSalah():
-    if app.config['Iqamahs']:
-        Iqamah_Times = app.config['Iqamahs']
-    else:
-        Iqamah_Times = dict(Iqamahs().json)
+    Iqamah_Times = dict(Iqamahs().json)
 
-    
     Today_Times = dict(prayerTimesToday().json)
-    
+
     currentTime = datetime.now()
     # currentTime = datetime(2023, 10, 21, 12, 0, 0)
     StartOfDay = datetime(currentTime.year, currentTime.month, currentTime.day, 0, 0, 0, 0)
@@ -196,8 +252,8 @@ def NextSalah():
     FajrMinute = int(Today_Times['Fajr'][3:5])
     FajrTime = datetime(currentTime.year, currentTime.month, currentTime.day, FajrHour, FajrMinute, 0, 0)
 
-    FajrIqamahHour = int(Iqamah_Times['Fajr'][:2]) if len(Iqamah_Times['Fajr']) else None
-    FajrIqamahMinute = int(Iqamah_Times['Fajr'][3:5]) if len(Iqamah_Times['Fajr']) else None
+    FajrIqamahHour = int(Iqamah_Times['Fajr'][:2]) if Iqamah_Times['Fajr'] else None
+    FajrIqamahMinute = int(Iqamah_Times['Fajr'][3:5]) if Iqamah_Times['Fajr'] else None
     FajrIqamah = datetime(currentTime.year, currentTime.month, currentTime.day, FajrHour, FajrMinute, 0, 0) if FajrIqamahHour and FajrIqamahMinute else None
 
     SunriseHour = int(Today_Times['Sunrise'][:2])
@@ -212,12 +268,12 @@ def NextSalah():
     DhuhrIqamahMinute = int(Iqamah_Times['Dhuhr'][3:5]) if len(Iqamah_Times['Dhuhr']) else None
     DhuhrIqamah = datetime(currentTime.year, currentTime.month, currentTime.day, DhuhrHour, DhuhrMinute, 0, 0) if DhuhrIqamahHour and DhuhrIqamahMinute else None
 
-    JummahKhutbahHour = int(Iqamah_Times['JummahKhutbah'][:2])
-    JummahKhutbahMinute = int(Iqamah_Times['JummahKhutbah'][3:5])
+    JummahKhutbahHour = int(Iqamah_Times['Jummah Khutbah'][:2])
+    JummahKhutbahMinute = int(Iqamah_Times['Jummah Khutbah'][3:5])
     JummahKhutbah = datetime(currentTime.year, currentTime.month, currentTime.day, JummahKhutbahHour, JummahKhutbahMinute, 0, 0)
 
-    JummahIqamahHour = int(Iqamah_Times['JummahIqamah'][:2])
-    JummahIqamahMinute = int(Iqamah_Times['JummahIqamah'][3:5])
+    JummahIqamahHour = int(Iqamah_Times['Jummah Iqamah'][:2])
+    JummahIqamahMinute = int(Iqamah_Times['Jummah Iqamah'][3:5])
     JummahIqamah = datetime(currentTime.year, currentTime.month, currentTime.day, JummahIqamahHour, JummahIqamahMinute, 0, 0)
 
     AsrHour = int(Today_Times['Asr'][:2])
@@ -340,31 +396,6 @@ def NextSalah():
 @app.route('/todayGreg')
 def todayGreg():
     return datetime.now().strftime('%A, %B %d, %Y')
-
-@app.route('/SlideshowDelay')
-def slideshowDelay():
-    with open('./data/MetaData.json') as f: 
-        file_content = dict(json.load(f))
-        file_id = file_content["TV_settings_file_id"]
-    
-    docs_creds_filename = app.config['docs_creds_filename']
-
-    # Define the scope and credentials
-    scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    credentials = ServiceAccountCredentials.from_json_keyfile_name(docs_creds_filename, scope)
-    
-    # Authorize the client with the credentials
-    client = gspread.authorize(credentials)
-    sheet = client.open_by_key(file_id).sheet1
-
-    i = 1
-    setting_name = sheet.acell(f'A{i}').value
-    while setting_name != "":
-        if setting_name == "Slideshow Delay":
-            return sheet.acell(f'B{i}').value
-        else:
-            i += 1
-    return 15 # Setting not found in google sheet so a default value of 15 seconds is sent  
 
 if __name__ == '__main__':
     app.run(port=7000)
