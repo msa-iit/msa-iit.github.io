@@ -245,8 +245,6 @@ def NextSalah():
     Today_Times = dict(prayerTimesToday().json)
 
     currentTime = datetime.now()
-    # currentTime = datetime(2023, 10, 21, 12, 0, 0)
-    currentTime = datetime(2023,9,26,10,20)
     StartOfDay = datetime(currentTime.year, currentTime.month, currentTime.day, 0, 0, 0, 0)
 
     FajrHour = int(Today_Times['Fajr'][:2])
