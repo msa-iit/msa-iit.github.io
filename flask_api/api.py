@@ -246,6 +246,9 @@ def NextSalah():
 
     currentTime = datetime.now()
     # currentTime = datetime(2023, 10, 21, 12, 0, 0)
+=======
+    currentTime = datetime(2023,9,26,10,20)
+>>>>>>> parent of 606e8c8 (commit in order to pull working TV configuration)
     StartOfDay = datetime(currentTime.year, currentTime.month, currentTime.day, 0, 0, 0, 0)
 
     FajrHour = int(Today_Times['Fajr'][:2])
