@@ -245,6 +245,7 @@ def NextSalah():
     Today_Times = dict(prayerTimesToday().json)
 
     currentTime = datetime.now()
+    currentTime = datetime(2024,2,7,12,5)
     StartOfDay = datetime(currentTime.year, currentTime.month, currentTime.day, 0, 0, 0, 0)
 
     FajrHour = int(Today_Times['Fajr'][:2])
@@ -265,8 +266,7 @@ def NextSalah():
 
     DhuhrIqamahHour = int(Iqamah_Times['Dhuhr'][:2]) if len(Iqamah_Times['Dhuhr']) else None
     DhuhrIqamahMinute = int(Iqamah_Times['Dhuhr'][3:5]) if len(Iqamah_Times['Dhuhr']) else None
-    DhuhrIqamah = datetime(currentTime.year, currentTime.month, currentTime.day, DhuhrHour, DhuhrMinute, 0, 0) if DhuhrIqamahHour and DhuhrIqamahMinute else None
-
+    DhuhrIqamah = datetime(currentTime.year, currentTime.month, currentTime.day, DhuhrIqamahHour, DhuhrIqamahMinute, 0, 0) if DhuhrIqamahHour and DhuhrIqamahMinute else None
     JummahKhutbahHour = int(Iqamah_Times['Jummah Khutbah'][:2])
     JummahKhutbahMinute = int(Iqamah_Times['Jummah Khutbah'][3:5])
     JummahKhutbah = datetime(currentTime.year, currentTime.month, currentTime.day, JummahKhutbahHour, JummahKhutbahMinute, 0, 0)
