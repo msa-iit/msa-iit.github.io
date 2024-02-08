@@ -21,24 +21,6 @@ def getDropbox():
 
     return dropbox.Dropbox(oauth2_refresh_token=REFRESH_TOKEN, app_key=APP_KEY, app_secret=APP_SECRET)
 
-# # Am I allowed to call the dropbox api or not
-# def call_API(call):
-#     DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-#     with open(f"./data/MetaData.json", 'r') as file:
-#         data = json.load(file)
-    
-#     last_call_str = data[f"Last_{call}_Call"]
-
-#     try:
-#         last_call_date = datetime.strptime(last_call_str, DATE_FORMAT)
-#     except ValueError:
-#         return False
-    
-#     if datetime.now() - last_call_date > timedelta(minutes=2):
-#         return True
-#     return False
-
-
 app = Flask(__name__)
 CORS(app)
 
@@ -245,7 +227,6 @@ def NextSalah():
     Today_Times = dict(prayerTimesToday().json)
 
     currentTime = datetime.now()
-    currentTime = datetime(2024,2,7,12,5)
     StartOfDay = datetime(currentTime.year, currentTime.month, currentTime.day, 0, 0, 0, 0)
 
     FajrHour = int(Today_Times['Fajr'][:2])
