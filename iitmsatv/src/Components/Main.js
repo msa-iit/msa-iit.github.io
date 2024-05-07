@@ -12,48 +12,48 @@ class Main extends Component {
     constructor(props) {
         super(props)
 
-        this.Today_Prayer_Times = {};
-        this.Iqamah_Times = {};
-        this.setTimes = true;
-        this.logosize = '200px';
+        this.Today_Prayer_Times = {};   // JSON that holds information about today's prayer times retrieved from Flask
+        this.Iqamah_Times = {};         // JSON that holds information about iqamah times retrieved from Flask
+        this.setTimes = true;           // Boolean used to only set the React State once and populate data on startup
+        this.logosize = '200px';        // Size of the MSA logo at the top right of the display
         this.state = {
-            Gregorian_Date: "",
-            Hijri_Date: "",
-            Fajr: {
+            Gregorian_Date: "",         //Todays Date (Gregorian format)
+            Hijri_Date: "",             //Todays Date (Hijri format)
+            Fajr: {                     //Fajr Prayer info
                 start: "",
                 iqamah: "",
                 next: false
             },
-            Sunrise: {
+            Sunrise: {                  //Sunrise Prayer info
                 start: "",
                 next: false
             },
-            Dhuhr: {
-                start: "",
-                iqamah: "",
-                next: false
-            },
-            Asr:  {
+            Dhuhr: {                    //Dhuhr Prayer info
                 start: "",
                 iqamah: "",
                 next: false
             },
-            Maghrib: {
+            Asr:  {                     //Asr Prayer info
                 start: "",
                 iqamah: "",
                 next: false
             },
-            Isha: {
+            Maghrib: {                  //Maghrib Prayer info
                 start: "",
                 iqamah: "",
                 next: false
             },
-            Jummah: {
+            Isha: {                     //Isha Prayer info
                 start: "",
                 iqamah: "",
                 next: false
             },
-            Next_Salah: {
+            Jummah: {                   //Jummah Prayer info
+                start: "",
+                iqamah: "",
+                next: false
+            },
+            Next_Salah: {               //Which Prayer is next and its info
                 prayer: null,
                 type: null,
                 time: null
@@ -67,6 +67,7 @@ class Main extends Component {
      */
     componentDidMount() {
         console.log('componentDidMount');
+        // Add data once
         if(this.setTimes){
             this.setPrayerTimeData();
         }
@@ -84,15 +85,17 @@ class Main extends Component {
      * Set the State with new prayer time data
     */
     setPrayerTimeData(){
-        Promise.all([fetch("http://localhost:7000/Iqamahs").then(res => res.json()),
-                    fetch("http://localhost:7000/prayerTimesToday").then(res => res.json()),
-                    fetch("http://localhost:7000/todayHijri").then(res => res.text()),
-                    fetch("http://localhost:7000/NextSalah").then(res => res.json()),
-                    fetch("http://localhost:7000/todayGreg").then(res => res.text())])
-        .then(([iqamah_times, today_times, hijri_date, nextSalah ,greg_date]) => {
+        //Fetch data from Flask API
+        Promise.all([fetch("http://localhost:7000/Iqamahs").then(res => res.json()),            // Iqamahs
+                    fetch("http://localhost:7000/prayerTimesToday").then(res => res.json()),    // prayer times for today
+                    fetch("http://localhost:7000/todayHijri").then(res => res.text()),          // hijri date
+                    fetch("http://localhost:7000/NextSalah").then(res => res.json()),           // info about next salah for countdown
+                    fetch("http://localhost:7000/todayGreg").then(res => res.text())])          // regular date
+        .then(([iqamah_times, today_times, hijri_date, nextSalah, greg_date]) => {
             this.Today_Prayer_Times = today_times;
             this.Iqamah_Times = iqamah_times;
             this.start = true;
+            //Populating this.State automatically updates the display
             this.setState(({
                 Gregorian_Date: greg_date,
                 Hijri_Date: hijri_date,
@@ -143,44 +146,11 @@ class Main extends Component {
         
     }
 
-    /**
-     * Takes a string in the format "hh:mm (CDT)" and converts it into hh:mm (am/pm)
-     * Ex: 18:10 (CDT) --> 6:10 pm 
-     * @param {string} time 
-     * @returns {string}
-     */
-    formatTime(time){
-        // console.log('time: ', time)
-        var newTime = `${time}`;    //Quick way to create full copy of 'time'. Can't use var newTime = time; Because that causes newtime -> time which would modify 'time' directly. We don't want that we want a full copy of 'time'
-        for (const phrase of ['CDT', 'CST', '()']) {
-            newTime = newTime.replace(phrase,'');
-        }
-
-        if(newTime.length === 0){
-            return newTime;
-        }
-
-        var hour = parseInt(time.substring(0,2));
-        if(hour > 12){
-            hour -= 12;
-            newTime = hour.toString() + newTime.substring(2) + ' PM';
-        }
-        else if (hour === 12){
-            newTime = newTime + ' PM';
-        }
-        else if (hour < 10) {
-            newTime = hour.toString() + newTime.substring(2) + ' AM';
-        }
-        else{
-            newTime = newTime + ' AM';
-        }
-        return newTime;
-    }
-
     render() {
         console.log('rendered');
         return (
             <body>
+                
                 <div id='fullContainer'>
                     <div id="leftContainer">
                         <div id='slideshow'>
@@ -189,27 +159,45 @@ class Main extends Component {
                         <div id='PrayerCardsList'>
                             <ListGroup horizontal>
                                 <ListGroup.Item active={this.state.Next_Salah.prayer === "Sunrise"}>
-                                    <PrayerTime prayer='Fajr' start={this.state.Fajr.start} iqamah={this.state.Fajr.iqamah} selected={this.state.Fajr.selected}></PrayerTime>
+                                    <PrayerTime prayer='Fajr' 
+                                                start={this.state.Fajr.start} 
+                                                iqamah={this.state.Fajr.iqamah} 
+                                                selected={this.state.Fajr.selected}></PrayerTime>
                                 </ListGroup.Item>
 
-                                <ListGroup.Item active={this.state.Next_Salah.prayer === "Dhuhr"}>
-                                    <PrayerTime prayer='Sunrise' start={this.state.Sunrise.start} iqamah={""} selected={this.state.Sunrise.selected}></PrayerTime>
+                                <ListGroup.Item active={this.state.Next_Salah.prayer === "Dhuhr" || this.state.Next_Salah.prayer === "Jummah"}>
+                                    <PrayerTime prayer='Sunrise' 
+                                                start={this.state.Sunrise.start} 
+                                                iqamah={""} 
+                                                selected={this.state.Sunrise.selected}></PrayerTime>
                                 </ListGroup.Item>
 
                                 <ListGroup.Item active={this.state.Next_Salah.prayer === "Asr"}>
-                                    <PrayerTime prayer='Dhuhr' start={this.state.Dhuhr.start} iqamah={this.state.Dhuhr.iqamah} selected={this.state.Dhuhr.selected}></PrayerTime>
+                                    <PrayerTime prayer='Dhuhr' 
+                                                start={this.state.Dhuhr.start} 
+                                                iqamah={this.state.Dhuhr.iqamah} 
+                                                selected={this.state.Dhuhr.selected}></PrayerTime>
                                 </ListGroup.Item>
 
                                 <ListGroup.Item active={this.state.Next_Salah.prayer === "Maghrib"}>
-                                    <PrayerTime prayer='Asr' start={this.state.Asr.start} iqamah={this.state.Asr.iqamah} selected={this.state.Asr.selected}></PrayerTime>
+                                    <PrayerTime prayer='Asr' 
+                                                start={this.state.Asr.start} 
+                                                iqamah={this.state.Asr.iqamah} 
+                                                selected={this.state.Asr.selected}></PrayerTime>
                                 </ListGroup.Item>
 
                                 <ListGroup.Item active={this.state.Next_Salah.prayer === "Isha"}>
-                                    <PrayerTime prayer='Maghrib' start={this.state.Maghrib.start} iqamah={this.state.Maghrib.iqamah} selected={this.state.Maghrib.selected}></PrayerTime>
+                                    <PrayerTime prayer='Maghrib' 
+                                                start={this.state.Maghrib.start} 
+                                                iqamah={this.state.Maghrib.iqamah} 
+                                                selected={this.state.Maghrib.selected}></PrayerTime>
                                 </ListGroup.Item>
 
                                 <ListGroup.Item active={this.state.Next_Salah.prayer === "Fajr"}>
-                                    <PrayerTime prayer='Isha' start={this.state.Isha.start} iqamah={this.state.Isha.iqamah} selected={this.state.Isha.selected}></PrayerTime>
+                                    <PrayerTime prayer='Isha' 
+                                                start={this.state.Isha.start} 
+                                                iqamah={this.state.Isha.iqamah} 
+                                                selected={this.state.Isha.selected}></PrayerTime>
                                 </ListGroup.Item>
                             </ListGroup>
                         </div>
@@ -243,10 +231,10 @@ class Main extends Component {
                                     </div>
                                 </div>
                                 <h2 id='JummahDisplay'>
-                                    Jummah Khutbah <br></br> {this.formatTime(this.state.Jummah.start)}
+                                    Jummah Khutbah <br></br> {this.state.Jummah.start}
                                 </h2>
                                 <h2 id='JummahDisplay'>
-                                    Jummah Salah <br></br> {this.formatTime(this.state.Jummah.iqamah)}
+                                    Jummah Salah <br></br> {this.state.Jummah.iqamah}
                                 </h2>
                         </div>
                     </div>

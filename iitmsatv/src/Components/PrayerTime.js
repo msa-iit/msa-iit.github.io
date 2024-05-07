@@ -6,6 +6,21 @@ import AsrPic from "../images/PrayerTimeIcons/Asr.png"
 import MaghribPic from "../images/PrayerTimeIcons/Maghrib.png"
 import IshaPic from "../images/PrayerTimeIcons/Fajr-Isha.png"
 
+/*
+Displays the countdown until next Salah
+
+Parameters passed from Parent
+- salah: The next Salah that is being counted down to
+- type:     time: the 'finish_time' passed in is for actual start of the time for prayer (Usually comes before the iqamah)
+            iqamah: the 'finish_time' passed in is for the iqamah
+            khutbah: the 'finish_time' passed in is for the jummah khutbah time
+- finish_time: The time that the countdown will end at
+- callback: function located in the Parent Component to fetch the next prayer time after time one is over
+
+1. Get the path of the photo for the prayer time card
+2. render the card with the information passed in from the Parameters
+*/
+
 class PrayerTime extends Component {
 
     constructor(props) {
@@ -14,34 +29,15 @@ class PrayerTime extends Component {
         this.picsize = "70px"; //Size of the image for this prayer card
     }
 
-    formatTime(time){
-        var newTime = `${time}`;    //Quick way to create full copy of 'time'. Can't use var newTime = time; Because that causes newtime -> time which would modify 'time' directly. We don't want that we want a full copy of 'time'
-        for (const phrase of ['CDT', 'CST', '()']) {
-            newTime = newTime.replace(phrase,'');
-        }
-
-        if(newTime.length === 0){
-            return newTime;
-        }
-
-        var hour = parseInt(time.substring(0,2));
-        if(hour > 12){
-            hour -= 12;
-            newTime = hour.toString() + newTime.substring(2) + ' PM';
-        }
-        else if (hour === 12){
-            newTime = newTime + ' PM';
-        }
-        else if (hour < 10) {
-            newTime = hour.toString() + newTime.substring(2) + ' AM';
-        }
-        else{
-            newTime = newTime + ' AM';
-        }
-        // console.log("new time: " + newTime);
-        return newTime;
-    }
-    
+    /**
+     * The function `getPhotoPath` takes a prayer name as input and returns the corresponding photo
+     * path based on the prayer type.
+     * @param prayer - The `getPhotoPath` function takes a parameter `prayer` which represents
+     * different prayer times such as Fajr, Sunrise, Dhuhr, Asr, Maghrib, and Isha. The function
+     * returns the corresponding picture path based on the input prayer time.
+     * @returns The function `getPhotoPath(prayer)` returns the photo path based on the input `prayer`.
+     * The specific photo path returned depends on the value of the `prayer` parameter.
+     */
     getPhotoPath(prayer) {
         if (prayer === 'Fajr'){
             return FajrPic;
@@ -67,7 +63,7 @@ class PrayerTime extends Component {
         return (
             <div id='PrayerCard'>
                 <div>
-                    <label>{this.formatTime(this.props.start)}</label>
+                    <label>{this.props.start}</label>
                 </div>
                 <div>
                     <label>{this.props.prayer}</label>
@@ -77,7 +73,7 @@ class PrayerTime extends Component {
                             style={{ width: this.picsize, height: this.picsize, objectFit: 'cover' }}
                     ></img>
                 <div>
-                    <label style={{fontSize: '40px' }}>{this.formatTime(this.props.iqamah)}</label>
+                    <label style={{fontSize: '40px' }}>{this.props.iqamah}</label>
                 </div>
             </div>
         )
