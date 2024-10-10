@@ -6,8 +6,7 @@ call venv\Scripts\activate
 start cmd /K python api.py
 
 :: Start react frontend
-cd ..
-cd iitmsatv
+cd ..\iitmsatv
 npm start
 
 :: Open in chrome
