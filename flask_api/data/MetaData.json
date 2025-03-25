@@ -1,7 +1,1 @@
-{
-    "last_aladhanAPI_call": "01/2024", 
-    "MSA_TV_folder_id": "1ZVTqpU729AIMcy3uNryj9uu48Zc04sUN", 
-    "Iqamahs_file_id": "1zx_-x24WPIRDdtkBT_bXKX8cDu7UbrPZmYLC0Xu_fww", 
-    "SlideshowPictures_folder_id": "1mKdOtwehj4jsyAqX9mTQloNgStRO94U0",
-    "TV_settings_file_id": "1Qml-IIuK3JNmjhA5INHXLGshHP0pI8e-3EtS9SRW50E"
-}
+{"last_aladhanAPI_call": "02/2024", "Iqamahs_Filepath": "/MSA_TV/Iqamahs.xlsx", "TV_settings_Filepath": "/MSA_TV/TV Settings.xlsx", "LoadImages_Filepath": "/MSA_TV/Slideshow Pictures"}
